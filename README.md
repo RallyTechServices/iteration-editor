@@ -2,15 +2,18 @@
 
 ## Summary/Description
 
-![screenshot](./images/screenshot.png "This is an example")
-
+Allows a user to enter data for a set of iteration fields so they can be updated.
 Works on a page with iteration scoping or will add an iteration selector.
 
-Allows a user to enter data for a set of iteration fields so they can be updated.
+![screenshot](./images/screenshot.png "display")
+
+Click on a field contents to get the editor
+
+![screenshot](./images/screenshot2.png "edit")
 
 ## Development Notes
 
-*Does not cascade* 
+*Does not cascade*
 
 CAVEAT: This will **only** work for workspaces that have the following custom fields
 defined for an iteration:

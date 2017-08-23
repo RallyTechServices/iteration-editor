@@ -2,10 +2,10 @@ Ext.define("ts-iteration-editor", {
     extend: 'Rally.app.App',
     componentCls: 'app',
     logger: new Rally.technicalservices.Logger(),
-    defaults: { margin: 10 },
+    defaults: { margin: '10 10 10 10' },
     items: [
         {xtype:'container',itemId:'selector_box'},
-        {xtype:'container',itemId:'display_box',defaults: { margin: 10 }}
+        {xtype:'container',itemId:'display_box',defaults: { margin: '0 10 0 10' }}
     ],
 
     integrationHeaders : {
@@ -83,6 +83,7 @@ Ext.define("ts-iteration-editor", {
         var me = this,
             display_box = this.down('#display_box');
 
+/*
         display_box.add({
             xtype:'container',
             html: Ext.String.format("Iteration<br/><br/>{0} ({1}-{2})",
@@ -91,34 +92,23 @@ Ext.define("ts-iteration-editor", {
                 Rally.util.DateTime.formatWithDefault(iteration.get('EndDate'))
             )
         });
+*/
 
-        display_box.add({ xtype:'container', html: "Goal" });
-        display_box.add({
-            xtype:'rallyrichtexteditor',
-            value: iteration.get('c_Goal'),
-            field: 'c_Goal',
-            listeners: {
-                blur: function(editor) { me._updateRecord(iteration,editor)},
-                scope: this
-            }
-        });
+        display_box.add({ xtype:'container', html: "Goal", cls: 'ts-bold' });
 
-        display_box.add({ xtype:'container', html: "Stretch Goal" });
-        display_box.add({
-            xtype:'rallyrichtexteditor',
-            value: iteration.get('c_StretchGoal'),
-            field: 'c_StretchGoal',
-            listeners: {
-                blur: function(editor) { me._updateRecord(iteration,editor)},
-                scope: this
-            }
-        });
+        var goal_box = display_box.add({xtype:'container',itemId:'goal_box'});
+        this._setFieldDisplay(goal_box,'c_Goal',iteration);
 
-        display_box.add({ xtype:'container', html: "Fist of Five" });
+        display_box.add({ xtype:'container', html: "Stretch Goal", cls: 'ts-bold' });
+        var stretch_goal_box = display_box.add({ xtype:'container', itemId: 'stretch_goal_box'});
+        this._setFieldDisplay(stretch_goal_box,'c_StretchGoal',iteration);
+
+        display_box.add({ xtype:'container', html: "Fist of Five", cls: 'ts-bold' });
         display_box.add({
             xtype:'rallyfieldvaluecombobox',
             value: iteration.get('c_FistofFive'),
             field: 'c_FistofFive',
+            margin: '5 10 20 10',
             model:'Iteration',
             listeners: {
                 change: function(editor) { me._updateRecord(iteration,editor)},
@@ -126,17 +116,46 @@ Ext.define("ts-iteration-editor", {
             }
         });
 
-        display_box.add({ xtype:'container', html: "Notes" });
-        display_box.add({
-            xtype:'rallyrichtexteditor',
-            value: iteration.get('Notes'),
-            field: 'Notes',
+        display_box.add({ xtype:'container', html: "Notes", cls: 'ts-bold' });
+        var notes_box = display_box.add({ xtype:'container', itemId: 'notes_box'});
+        this._setFieldDisplay(notes_box,'Notes',iteration);
+    },
+
+    _setFieldDisplay: function(container,fieldname,record) {
+        container.removeAll();
+        var value = record.get(fieldname);
+        if ( Ext.isEmpty(value) ) { value = "<br/>"; }
+
+        container.add({
+            xtype:'container',
+            html: value,
+            field: fieldname,
+            cls: 'ts-field-display',
             listeners: {
-                blur: function(editor) { me._updateRecord(iteration,editor)},
+                element: 'el',
+                click: function() {
+                    this._setFieldEditor(container,fieldname,record);
+                },
                 scope: this
             }
         });
+    },
 
+    _setFieldEditor: function(container,fieldname,record) {
+        container.removeAll();
+        container.add({
+            xtype:'rallyrichtexteditor',
+            value: record.get(fieldname),
+            field: fieldname,
+            margin: '5 10 20 10',
+            listeners: {
+                blur: function(editor) {
+                    this._updateRecord(record,editor);
+                    this._setFieldDisplay(container,fieldname,record);
+                },
+                scope: this
+            }
+        }).focus();
     },
 
     _updateRecord: function(record,editor) {
@@ -146,7 +165,16 @@ Ext.define("ts-iteration-editor", {
         if ( field.name ) { fieldname = field.name; }
 
         this.logger.log('update field ', fieldname);
-        if ( record.get(fieldname) == value ) { return; }
+        var old_value = record.get(fieldname);
+        value = value.replace(/\<br>/g,"<br \/>");
+
+        if ( old_value == value ) {
+            this.logger.log('no change');
+            return;
+        }
+
+        this.logger.log('changing ', old_value, value);
+
         record.set(fieldname,value);
         record.save({
             callback: function(result,operation) {
